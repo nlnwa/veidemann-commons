@@ -32,6 +32,7 @@ import org.slf4j.LoggerFactory;
 import java.net.InetAddress;
 import java.net.InetSocketAddress;
 import java.net.UnknownHostException;
+import java.util.Objects;
 import java.util.concurrent.TimeUnit;
 
 /**
@@ -64,6 +65,7 @@ public class DnsServiceClient implements AutoCloseable {
         try {
             // Ensure host is never null
             host = host == null ? "" : host;
+            Objects.requireNonNull(collectionRef, "CollectionRef cannot be null");
             ResolveRequest request = ResolveRequest.newBuilder()
                     .setHost(host)
                     .setPort(port)
