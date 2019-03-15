@@ -19,6 +19,8 @@ public interface DbServiceSPI extends AutoCloseable {
 
     ExecutionsAdapter getExecutionsAdapter();
 
+    EventAdapter getEventAdapter();
+
     DbInitializer getDbInitializer();
 
     DistributedLock createDistributedLock(Key key, int expireSeconds);

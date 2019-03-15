@@ -1,6 +1,8 @@
 package no.nb.nna.veidemann.commons.db;
 
 import no.nb.nna.veidemann.api.eventhandler.v1.DeleteResponse;
+import no.nb.nna.veidemann.api.eventhandler.v1.EventObject;
+import no.nb.nna.veidemann.api.eventhandler.v1.EventRef;
 import no.nb.nna.veidemann.api.eventhandler.v1.ListCountResponse;
 import no.nb.nna.veidemann.api.eventhandler.v1.UpdateRequest;
 import no.nb.nna.veidemann.api.eventhandler.v1.UpdateResponse;
