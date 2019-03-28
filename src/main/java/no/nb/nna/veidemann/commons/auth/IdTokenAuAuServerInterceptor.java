@@ -16,61 +16,33 @@
 package no.nb.nna.veidemann.commons.auth;
 
 import com.nimbusds.jwt.JWTClaimsSet;
-import io.grpc.BindableService;
 import io.grpc.Context;
 import io.grpc.Contexts;
 import io.grpc.Metadata;
 import io.grpc.ServerCall;
-import io.grpc.ServerCall.Listener;
 import io.grpc.ServerCallHandler;
-import io.grpc.ServerInterceptors;
-import io.grpc.ServerServiceDefinition;
-import io.grpc.Status;
 import no.nb.nna.veidemann.api.config.v1.Role;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.util.Arrays;
 import java.util.Collection;
-import java.util.HashSet;
 import java.util.List;
 
-public class IdTokenAuAuServerInterceptor implements AuAuServerInterceptor {
+/**
+ * Authenticate a user using OpenId connect and then map the user identity to a set of roles defined in Veidemann config.
+ * <p>
+ * This interceptor is must be followed by {@link AuthorisationAuAuServerInterceptor}.
+ */
+public class IdTokenAuAuServerInterceptor extends AuAuServerInterceptor {
     private static final Logger LOG = LoggerFactory.getLogger(IdTokenAuAuServerInterceptor.class);
-
-    public static final Metadata.Key<String> BEARER_TOKEN_KEY =
-            Metadata.Key.of("authorization", Metadata.ASCII_STRING_MARSHALLER);
-
-    public static final Listener NOOP_LISTENER = new Listener() {
-    };
 
     private final UserRoleMapper userRoleMapper;
 
     private final IdTokenValidator idTokenValidator;
 
-    private Grants grants = new Grants();
-
     public IdTokenAuAuServerInterceptor(UserRoleMapper userRoleMapper, IdTokenValidator idTokenValidator) {
         this.userRoleMapper = userRoleMapper;
         this.idTokenValidator = idTokenValidator;
-    }
-
-    /**
-     * Add authorization to all requests made to this service.
-     *
-     * @param bindableService to intercept
-     * @return the serviceDef with a authorization interceptor
-     */
-    @Override
-    public ServerServiceDefinition intercept(BindableService bindableService) {
-        ServerServiceDefinition def = bindableService.bindService();
-        String serviceName = def.getServiceDescriptor().getName();
-        Arrays.stream(bindableService.getClass().getDeclaredMethods())
-                .forEach(m -> grants.addGrants(
-                        serviceName + "/" + m.getName().substring(0, 1).toUpperCase() + m.getName().substring(1),
-                        m.getDeclaredAnnotation(AllowedRoles.class)));
-
-        return ServerInterceptors.intercept(def, this);
     }
 
     @Override
@@ -82,25 +54,17 @@ public class IdTokenAuAuServerInterceptor implements AuAuServerInterceptor {
         String method = call.getMethodDescriptor().getFullMethodName();
         LOG.debug("Method: {}", method);
 
-        Collection<Role> roles = new HashSet<>();
-
-        // All users should have the ANY role. Even if their not logged in.
-        roles.add(Role.ANY);
+        Collection<Role> roles = getRoleList();
 
         // Check if user is logged in
         JWTClaimsSet claims = validateBearerToken(requestHeaders);
         if (claims == null) {
-            if (grants.isRequireAuthenticatedUser(method)) {
-                call.close(Status.UNAUTHENTICATED, new Metadata());
-                return NOOP_LISTENER;
-            } else {
-                Context contextWithEmailAndRoles = Context.current()
-                        .withValue(RolesContextKey.getKey(), roles);
-                return Contexts.interceptCall(contextWithEmailAndRoles, call, requestHeaders, next);
-            }
+            Context contextWithEmailAndRoles = Context.current()
+                    .withValue(RolesContextKey.getKey(), roles);
+            return Contexts.interceptCall(contextWithEmailAndRoles, call, requestHeaders, next);
         }
 
-        // User is logged in so add ANY_USER independently of specific role assignments
+        // User is logged in. Add ANY_USER independently of specific role assignments
         roles.add(Role.ANY_USER);
 
         String email = (String) claims.getClaim("email");
@@ -112,12 +76,6 @@ public class IdTokenAuAuServerInterceptor implements AuAuServerInterceptor {
         roles = userRoleMapper.getRolesForUser(email, groups, roles);
         LOG.debug("Roles: {}", roles);
 
-        // Check if user has required role
-        if (!grants.isAllowed(method, roles)) {
-            call.close(Status.PERMISSION_DENIED, new Metadata());
-            return NOOP_LISTENER;
-        }
-
         Context contextWithEmailAndRoles = Context.current()
                 .withValues(EmailContextKey.getKey(), email, RolesContextKey.getKey(), roles);
 
@@ -125,16 +83,13 @@ public class IdTokenAuAuServerInterceptor implements AuAuServerInterceptor {
     }
 
     private JWTClaimsSet validateBearerToken(Metadata requestHeaders) {
-        String bearerToken = requestHeaders.get(BEARER_TOKEN_KEY);
+        String bearerToken = getAuthorizationToken(requestHeaders, "bearer");
         LOG.trace("Bearer token: {}", bearerToken);
 
-        if (bearerToken != null && !bearerToken.isEmpty()) {
-            String[] parts = bearerToken.split("\\s+", 2);
-            if (parts.length == 2 && "bearer".equalsIgnoreCase(parts[0])) {
-                JWTClaimsSet claims = idTokenValidator.verifyIdToken(parts[1]);
-                LOG.trace("Claims: {}", claims);
-                return claims;
-            }
+        if (!bearerToken.isEmpty()) {
+            JWTClaimsSet claims = idTokenValidator.verifyIdToken(bearerToken);
+            LOG.trace("Claims: {}", claims);
+            return claims;
         }
         return null;
     }
