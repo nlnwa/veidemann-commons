@@ -93,6 +93,10 @@ public class DbService implements AutoCloseable {
         return service.getExecutionsAdapter();
     }
 
+    public EventAdapter getEventAdapter() {
+        return service.getEventAdapter();
+    }
+
     public DbInitializer getDbInitializer() {
         return service.getDbInitializer();
     }

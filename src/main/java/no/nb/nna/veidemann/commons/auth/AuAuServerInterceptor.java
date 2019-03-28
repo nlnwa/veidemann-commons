@@ -16,13 +16,53 @@
 package no.nb.nna.veidemann.commons.auth;
 
 import io.grpc.BindableService;
+import io.grpc.Metadata;
 import io.grpc.ServerInterceptor;
+import io.grpc.ServerInterceptors;
 import io.grpc.ServerServiceDefinition;
+import no.nb.nna.veidemann.api.config.v1.Role;
 
-public interface AuAuServerInterceptor extends ServerInterceptor, AutoCloseable {
-    ServerServiceDefinition intercept(BindableService bindableService);
+import java.util.Collection;
+import java.util.HashSet;
+
+public abstract class AuAuServerInterceptor implements ServerInterceptor, AutoCloseable {
+    public static final Metadata.Key<String> AUTHORIZATION_KEY =
+            Metadata.Key.of("authorization", Metadata.ASCII_STRING_MARSHALLER);
+
+    public ServerServiceDefinition intercept(BindableService bindableService) {
+        return ServerInterceptors.intercept(bindableService, this);
+    }
+
+    public ServerServiceDefinition intercept(ServerServiceDefinition serviceDef) {
+        return ServerInterceptors.intercept(serviceDef, this);
+    }
+
+    public Collection<Role> getRoleList() {
+        Collection<Role> roles = RolesContextKey.roles();
+        if (roles == null) {
+            roles = new HashSet<>();
+        }
+        return roles;
+    }
 
     @Override
-    default void close() {
+    public void close() {
+    }
+
+    public String getAuthorizationToken(Metadata requestHeaders, String type) {
+        type = type.toLowerCase();
+        Iterable<String> authHeaders = requestHeaders.getAll(AUTHORIZATION_KEY);
+        if (authHeaders != null) {
+            for (String h : requestHeaders.getAll(AUTHORIZATION_KEY)) {
+                if (h.toLowerCase().startsWith(type)) {
+                    String[] parts = h.split("\\s+", 2);
+                    if (parts.length == 2) {
+                        return parts[1];
+                    }
+                    return h;
+                }
+            }
+        }
+        return "";
     }
 }
