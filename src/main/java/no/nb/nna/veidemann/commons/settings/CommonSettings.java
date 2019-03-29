@@ -30,6 +30,12 @@ public class CommonSettings {
 
     private String dbPassword;
 
+    private String eventHandlerHost;
+
+    private int eventHandlerPort;
+
+    private String eventApiKey;
+
     public String getDbHost() {
         return dbHost;
     }
@@ -93,5 +99,29 @@ public class CommonSettings {
     public CommonSettings withDbPassword(String dbPassword) {
         this.dbPassword = dbPassword;
         return this;
+    }
+
+    public String getEventHandlerHost() {
+        return eventHandlerHost;
+    }
+
+    public void setEventHandlerHost(String eventHandlerHost) {
+        this.eventHandlerHost = eventHandlerHost;
+    }
+
+    public int getEventHandlerPort() {
+        return eventHandlerPort;
+    }
+
+    public void setEventHandlerPort(int eventHandlerPort) {
+        this.eventHandlerPort = eventHandlerPort;
+    }
+
+    public String getEventApiKey() {
+        return eventApiKey;
+    }
+
+    public void setEventApiKey(String eventApiKey) {
+        this.eventApiKey = eventApiKey;
     }
 }
