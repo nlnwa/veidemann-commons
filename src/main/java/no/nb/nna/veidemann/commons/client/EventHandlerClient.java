@@ -33,6 +33,7 @@ import no.nb.nna.veidemann.api.eventhandler.v1.EventObject;
 import no.nb.nna.veidemann.api.eventhandler.v1.EventObject.Severity;
 import no.nb.nna.veidemann.api.eventhandler.v1.SaveRequest;
 import no.nb.nna.veidemann.commons.auth.AuAuServerInterceptor;
+import no.nb.nna.veidemann.commons.settings.CommonSettings;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -54,6 +55,10 @@ public class EventHandlerClient implements AutoCloseable {
     public EventHandlerClient(final String host, final int port, final String apiKey) {
         this(ManagedChannelBuilder.forAddress(host, port).usePlaintext(), apiKey);
         LOG.info("Event handler client pointing to " + host + ":" + port);
+    }
+
+    public EventHandlerClient(final CommonSettings settings) {
+        this(settings.getEventHandlerHost(), settings.getEventHandlerPort(), settings.getEventApiKey());
     }
 
     public EventHandlerClient(final ManagedChannel channel, final String apiKey) {
