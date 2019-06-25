@@ -192,7 +192,7 @@ public class AuthorisationAuAuServerInterceptorTest {
     private CallCredentials createCredentials(String apiKey, String bearerToken) {
         return new CallCredentials() {
             @Override
-            public void applyRequestMetadata(MethodDescriptor<?, ?> method, Attributes attrs, Executor appExecutor, MetadataApplier applier) {
+            public void applyRequestMetadata(RequestInfo requestInfo, Executor appExecutor, MetadataApplier applier) {
                 Metadata headers = new Metadata();
                 headers.put(AuAuServerInterceptor.AUTHORIZATION_KEY, "ApiKey " + apiKey);
                 headers.put(AuAuServerInterceptor.AUTHORIZATION_KEY, "Bearer " + bearerToken);
