@@ -15,8 +15,8 @@
  */
 package no.nb.nna.veidemann.commons.settings;
 
-import no.nb.nna.veidemann.api.ConfigProto.LogLevels;
-import no.nb.nna.veidemann.api.ConfigProto.LogLevels.LogLevel;
+import no.nb.nna.veidemann.api.config.v1.LogLevels;
+import no.nb.nna.veidemann.api.config.v1.LogLevels.LogLevel;
 import org.apache.logging.log4j.core.LoggerContext;
 import org.apache.logging.log4j.core.config.Configuration;
 import org.apache.logging.log4j.core.config.ConfigurationListener;
@@ -43,7 +43,7 @@ public class XmlPlusConfigServerOverridesConfiguration extends XmlConfiguration 
     private LogLevels logLevels;
 
     public XmlPlusConfigServerOverridesConfiguration(final LoggerContext loggerContext,
-            final ConfigurationSource configSource) {
+                                                     final ConfigurationSource configSource) {
         super(loggerContext, configSource);
 
         try {
@@ -163,7 +163,7 @@ public class XmlPlusConfigServerOverridesConfiguration extends XmlConfiguration 
         private final Reconfigurable reconfigurable;
 
         public ReconfigurationRunnable(final ConfigurationListener configurationListener,
-                final Reconfigurable reconfigurable) {
+                                       final Reconfigurable reconfigurable) {
             this.configurationListener = configurationListener;
             this.reconfigurable = reconfigurable;
         }

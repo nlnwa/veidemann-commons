@@ -17,26 +17,22 @@
 package no.nb.nna.veidemann.commons.auth;
 
 import com.nimbusds.jwt.JWTClaimsSet;
-import io.grpc.Attributes;
 import io.grpc.CallCredentials;
 import io.grpc.ManagedChannel;
 import io.grpc.Metadata;
-import io.grpc.MethodDescriptor;
 import io.grpc.Server;
 import io.grpc.StatusRuntimeException;
 import io.grpc.inprocess.InProcessChannelBuilder;
 import io.grpc.inprocess.InProcessServerBuilder;
 import io.grpc.stub.StreamObserver;
 import net.minidev.json.JSONArray;
+import no.nb.nna.veidemann.api.config.v1.ConfigGrpc;
+import no.nb.nna.veidemann.api.config.v1.ConfigObject;
+import no.nb.nna.veidemann.api.config.v1.ConfigRef;
+import no.nb.nna.veidemann.api.config.v1.Kind;
+import no.nb.nna.veidemann.api.config.v1.ListCountResponse;
+import no.nb.nna.veidemann.api.config.v1.ListRequest;
 import no.nb.nna.veidemann.api.config.v1.Role;
-import no.nb.nna.veidemann.api.eventhandler.v1.Data;
-import no.nb.nna.veidemann.api.eventhandler.v1.EventHandlerGrpc;
-import no.nb.nna.veidemann.api.eventhandler.v1.EventObject;
-import no.nb.nna.veidemann.api.eventhandler.v1.EventObject.Severity;
-import no.nb.nna.veidemann.api.eventhandler.v1.ListCountResponse;
-import no.nb.nna.veidemann.api.eventhandler.v1.ListRequest;
-import no.nb.nna.veidemann.api.eventhandler.v1.SaveRequest;
-import no.nb.nna.veidemann.commons.client.EventHandlerClient;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
@@ -62,13 +58,13 @@ public class AuthorisationAuAuServerInterceptorTest {
 
     private ManagedChannel inProcessChannel;
 
-    private EventHandlerGrpc.EventHandlerBlockingStub blockingStub;
+    private ConfigGrpc.ConfigBlockingStub blockingStub;
 
     @Before
     public void beforeEachTest() throws IOException {
         inProcessServerBuilder = InProcessServerBuilder.forName(uniqueServerName).directExecutor();
         inProcessChannel = InProcessChannelBuilder.forName(uniqueServerName).directExecutor().build();
-        blockingStub = EventHandlerGrpc.newBlockingStub(inProcessChannel);
+        blockingStub = ConfigGrpc.newBlockingStub(inProcessChannel);
     }
 
     @After
@@ -81,7 +77,7 @@ public class AuthorisationAuAuServerInterceptorTest {
         // Create Service and interceptors
         TestService service = new TestService();
 
-        AuthorisationAuAuServerInterceptor authorisationAuAuServerInterceptor = new AuthorisationAuAuServerInterceptor();
+        AuthorisationAuAuServerInterceptor authorisationAuAuServerInterceptor = new AuthorisationAuAuServerInterceptor(service);
 
         ApiKeyRoleMapper apiKeyRoleMapper = new ApiKeyRoleMapperFromFile("src/test/resources/apikey_rolemapping");
         ApiKeyAuAuServerInterceptor apiKeyAuAuServerInterceptor = new ApiKeyAuAuServerInterceptor(apiKeyRoleMapper);
@@ -109,8 +105,8 @@ public class AuthorisationAuAuServerInterceptorTest {
                 .build().start();
 
         assertThatExceptionOfType(StatusRuntimeException.class)
-                .isThrownBy(() ->blockingStub.withCallCredentials(createCredentials("myApiKey", "token1")).countEventObjects(ListRequest.getDefaultInstance()))
-        .withMessage("UNAUTHENTICATED");
+                .isThrownBy(() -> blockingStub.withCallCredentials(createCredentials("myApiKey", "token1")).countConfigObjects(ListRequest.getDefaultInstance()))
+                .withMessage("UNAUTHENTICATED");
 
         inProcessServer.shutdownNow();
 
@@ -120,61 +116,36 @@ public class AuthorisationAuAuServerInterceptorTest {
                 .addService(idTokenAuAuServerInterceptor.intercept(apiKeyAuAuServerInterceptor.intercept(authorisationAuAuServerInterceptor.intercept(service))))
                 .build().start();
 
-        blockingStub.withCallCredentials(createCredentials("myApiKey", "token1")).countEventObjects(ListRequest.getDefaultInstance());
+        blockingStub.withCallCredentials(createCredentials("myApiKey", "token1")).countConfigObjects(ListRequest.getDefaultInstance());
         assertThat(service.lastRoles).containsExactlyInAnyOrder(Role.ANY, Role.ANY_USER, Role.READONLY, Role.SYSTEM);
 
         assertThatExceptionOfType(StatusRuntimeException.class)
-                .isThrownBy(() ->blockingStub.withCallCredentials(createCredentials("wrongApiKey", "token1")).saveEventObject(SaveRequest.getDefaultInstance()))
+                .isThrownBy(() -> blockingStub.withCallCredentials(createCredentials("wrongApiKey", "token1")).saveConfigObject(ConfigObject.getDefaultInstance()))
+                .withMessage("PERMISSION_DENIED");
+
+        assertThatExceptionOfType(StatusRuntimeException.class)
+                .isThrownBy(() -> blockingStub.withCallCredentials(createCredentials("myApiKey", "token1")).getConfigObject(ConfigRef.getDefaultInstance()))
+                .withMessage("PERMISSION_DENIED");
+
+        blockingStub.withCallCredentials(createCredentials("myApiKey", "token1")).getConfigObject(ConfigRef.newBuilder().setKind(Kind.browserConfig).build());
+        assertThat(service.lastRoles).containsExactlyInAnyOrder(Role.ANY, Role.ANY_USER, Role.READONLY, Role.SYSTEM);
+
+        blockingStub.withCallCredentials(createCredentials("myApiKey", null)).getConfigObject(ConfigRef.newBuilder().setKind(Kind.browserConfig).build());
+        assertThat(service.lastRoles).containsExactlyInAnyOrder(Role.ANY, Role.ANY_USER, Role.SYSTEM);
+
+        assertThatExceptionOfType(StatusRuntimeException.class)
+                .isThrownBy(() -> blockingStub.withCallCredentials(createCredentials("myApiKey", "token1")).getConfigObject(ConfigRef.newBuilder().setKind(Kind.roleMapping).build()))
                 .withMessage("PERMISSION_DENIED");
 
         inProcessServer.shutdownNow();
     }
 
-    @Test
-    public void testWithClient() throws IOException {
-        // Create Service and interceptors
-        TestService service = new TestService();
-
-        AuthorisationAuAuServerInterceptor authorisationAuAuServerInterceptor = new AuthorisationAuAuServerInterceptor();
-
-        ApiKeyRoleMapper apiKeyRoleMapper = new ApiKeyRoleMapperFromFile("src/test/resources/apikey_rolemapping");
-        ApiKeyAuAuServerInterceptor apiKeyAuAuServerInterceptor = new ApiKeyAuAuServerInterceptor(apiKeyRoleMapper);
-
-        IdTokenValidator idValidatorMock = mock(IdTokenValidator.class);
-        UserRoleMapper roleMapperMock = mock(UserRoleMapper.class);
-        when(idValidatorMock.verifyIdToken("token1"))
-                .thenReturn(new JWTClaimsSet.Builder()
-                        .claim("email", "user@example.com")
-                        .claim("groups", new JSONArray())
-                        .build());
-        when(roleMapperMock.getRolesForUser(eq("user@example.com"), anyList(), anyCollection()))
-                .thenAnswer((Answer<Collection<Role>>) invocation -> {
-                    Collection<Role> roles = invocation.getArgument(2);
-                    roles.add(Role.ANY_USER);
-                    roles.add(Role.READONLY);
-                    return roles;
-                });
-
-        IdTokenAuAuServerInterceptor idTokenAuAuServerInterceptor = new IdTokenAuAuServerInterceptor(roleMapperMock, idValidatorMock);
-
-        EventHandlerClient client = new EventHandlerClient(inProcessChannel, "myApiKey");
-
-        Server inProcessServer = inProcessServerBuilder
-                .addService(idTokenAuAuServerInterceptor.intercept(apiKeyAuAuServerInterceptor.intercept(authorisationAuAuServerInterceptor.intercept(service))))
-                .build().start();
-
-        EventObject eo = client.createEvent("foo", "system", Severity.INFO, "Create", Data.newBuilder().setKey("text").setValue("foo").build());
-        assertThat(service.lastRoles).containsExactlyInAnyOrder(Role.ANY, Role.ANY_USER, Role.SYSTEM);
-
-        inProcessServer.shutdownNow();
-    }
-
-    public class TestService extends EventHandlerGrpc.EventHandlerImplBase {
+    public class TestService extends ConfigGrpc.ConfigImplBase {
         Collection<Role> lastRoles;
 
         @Override
         @AllowedRoles({Role.ADMIN, Role.CURATOR, Role.READONLY})
-        public void countEventObjects(ListRequest request, StreamObserver<ListCountResponse> responseObserver) {
+        public void countConfigObjects(no.nb.nna.veidemann.api.config.v1.ListRequest request, StreamObserver<no.nb.nna.veidemann.api.config.v1.ListCountResponse> responseObserver) {
             lastRoles = RolesContextKey.roles();
             responseObserver.onNext(ListCountResponse.newBuilder().setCount(5).build());
             responseObserver.onCompleted();
@@ -182,9 +153,20 @@ public class AuthorisationAuAuServerInterceptorTest {
 
         @Override
         @AllowedRoles({Role.ADMIN, Role.CURATOR, Role.SYSTEM})
-        public void saveEventObject(SaveRequest request, StreamObserver<EventObject> responseObserver) {
+        public void saveConfigObject(ConfigObject request, StreamObserver<ConfigObject> responseObserver) {
             lastRoles = RolesContextKey.roles();
-            responseObserver.onNext(request.getObject());
+            responseObserver.onNext(request);
+            responseObserver.onCompleted();
+        }
+
+        @Override
+        @Authorisations({
+                @AllowedRoles(value = {Role.READONLY, Role.CURATOR, Role.OPERATOR, Role.ADMIN, Role.SYSTEM}, kind = {Kind.browserConfig}),
+                @AllowedRoles(value = {Role.ADMIN}, kind = {Kind.roleMapping})
+        })
+        public void getConfigObject(ConfigRef request, StreamObserver<ConfigObject> responseObserver) {
+            lastRoles = RolesContextKey.roles();
+            responseObserver.onNext(ConfigObject.getDefaultInstance());
             responseObserver.onCompleted();
         }
     }
@@ -194,8 +176,12 @@ public class AuthorisationAuAuServerInterceptorTest {
             @Override
             public void applyRequestMetadata(RequestInfo requestInfo, Executor appExecutor, MetadataApplier applier) {
                 Metadata headers = new Metadata();
-                headers.put(AuAuServerInterceptor.AUTHORIZATION_KEY, "ApiKey " + apiKey);
-                headers.put(AuAuServerInterceptor.AUTHORIZATION_KEY, "Bearer " + bearerToken);
+                if (apiKey != null) {
+                    headers.put(AuAuServerInterceptor.AUTHORIZATION_KEY, "ApiKey " + apiKey);
+                }
+                if (bearerToken != null) {
+                    headers.put(AuAuServerInterceptor.AUTHORIZATION_KEY, "Bearer " + bearerToken);
+                }
                 applier.apply(headers);
             }
 

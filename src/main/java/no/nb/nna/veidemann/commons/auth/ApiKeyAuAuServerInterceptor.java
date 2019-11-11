@@ -28,9 +28,9 @@ import org.slf4j.LoggerFactory;
 import java.util.Collection;
 
 /**
- * Authenticate a client by mapping an api key to a set of roles defined in a mpping file.
+ * Authenticate a client by mapping an api key to a set of roles defined in ba an {@link ApiKeyRoleMapper}.
  * <p>
- * This interceptor is must be followed by {@link AuthorisationAuAuServerInterceptor}.
+ * This interceptor must be followed by {@link AuthorisationAuAuServerInterceptor}.
  */
 public class ApiKeyAuAuServerInterceptor extends AuAuServerInterceptor {
     private static final Logger LOG = LoggerFactory.getLogger(IdTokenAuAuServerInterceptor.class);
@@ -44,7 +44,6 @@ public class ApiKeyAuAuServerInterceptor extends AuAuServerInterceptor {
     @Override
     public <ReqT, RespT> Listener<ReqT> interceptCall(ServerCall<ReqT, RespT> call, Metadata requestHeaders, ServerCallHandler<ReqT, RespT> next) {
         String apiKey = getAuthorizationToken(requestHeaders, "apikey");
-
         if (!apiKey.isEmpty()) {
             Collection<Role> roles = getRoleList();
             roles.addAll(apiKeyRoleMapper.getRolesForAPiKey(apiKey, roles));
