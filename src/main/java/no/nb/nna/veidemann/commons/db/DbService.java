@@ -77,10 +77,6 @@ public class DbService implements AutoCloseable {
         return instance != null;
     }
 
-    public DbAdapter getDbAdapter() {
-        return service.getDbAdapter();
-    }
-
     public ConfigAdapter getConfigAdapter() {
         return service.getConfigAdapter();
     }

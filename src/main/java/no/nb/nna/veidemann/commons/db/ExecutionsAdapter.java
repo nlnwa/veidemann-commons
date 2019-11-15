@@ -15,23 +15,29 @@
  */
 package no.nb.nna.veidemann.commons.db;
 
-import no.nb.nna.veidemann.api.StatusProto.ExecutionsListReply;
-import no.nb.nna.veidemann.api.StatusProto.JobExecutionsListReply;
-import no.nb.nna.veidemann.api.StatusProto.ListExecutionsRequest;
-import no.nb.nna.veidemann.api.StatusProto.ListJobExecutionsRequest;
-import no.nb.nna.veidemann.api.StatusProto.RunningExecutionsListReply;
-import no.nb.nna.veidemann.api.StatusProto.RunningExecutionsRequest;
+import no.nb.nna.veidemann.api.commons.v1.ExtractedText;
 import no.nb.nna.veidemann.api.config.v1.CrawlScope;
+import no.nb.nna.veidemann.api.contentwriter.v1.CrawledContent;
+import no.nb.nna.veidemann.api.contentwriter.v1.StorageRef;
 import no.nb.nna.veidemann.api.frontier.v1.CrawlExecutionStatus;
 import no.nb.nna.veidemann.api.frontier.v1.CrawlExecutionStatusChange;
+import no.nb.nna.veidemann.api.frontier.v1.CrawlLog;
 import no.nb.nna.veidemann.api.frontier.v1.JobExecutionStatus;
+import no.nb.nna.veidemann.api.frontier.v1.PageLog;
+import no.nb.nna.veidemann.api.report.v1.CrawlExecutionsListRequest;
+import no.nb.nna.veidemann.api.report.v1.CrawlLogListRequest;
+import no.nb.nna.veidemann.api.report.v1.JobExecutionsListRequest;
+import no.nb.nna.veidemann.api.report.v1.ListCountResponse;
+import no.nb.nna.veidemann.api.report.v1.PageLogListRequest;
+
+import java.util.Optional;
 
 public interface ExecutionsAdapter {
     JobExecutionStatus createJobExecutionStatus(String jobId) throws DbException;
 
     JobExecutionStatus getJobExecutionStatus(String jobExecutionId) throws DbException;
 
-    JobExecutionsListReply listJobExecutionStatus(ListJobExecutionsRequest request) throws DbException;
+    ChangeFeed<JobExecutionStatus> listJobExecutionStatus(JobExecutionsListRequest request) throws DbException;
 
     /**
      * Update the state for a Job Execution to ABORTED_MANUAL.
@@ -46,7 +52,7 @@ public interface ExecutionsAdapter {
 
     CrawlExecutionStatus getCrawlExecutionStatus(String crawlExecutionId) throws DbException;
 
-    ExecutionsListReply listCrawlExecutionStatus(ListExecutionsRequest request) throws DbException;
+    ChangeFeed<CrawlExecutionStatus> listCrawlExecutionStatus(CrawlExecutionsListRequest request) throws DbException;
 
     /**
      * Update the state for a Crawl Execution to ABORTED_MANUAL.
@@ -57,6 +63,48 @@ public interface ExecutionsAdapter {
      */
     CrawlExecutionStatus setCrawlExecutionStateAborted(String crawlExecutionId) throws DbException;
 
-    ChangeFeed<RunningExecutionsListReply> getCrawlExecutionStatusStream(RunningExecutionsRequest request) throws DbException;
+    Optional<CrawledContent> hasCrawledContent(CrawledContent cc) throws DbException;
 
+    StorageRef saveStorageRef(StorageRef storageRef) throws DbException;
+
+    StorageRef getStorageRef(String warcId) throws DbException;
+
+    CrawlLog saveCrawlLog(CrawlLog cl) throws DbException;
+
+    ChangeFeed<CrawlLog> listCrawlLogs(CrawlLogListRequest request) throws DbException;
+
+    ListCountResponse countCrawlLogs(CrawlLogListRequest request) throws DbException;
+
+    PageLog savePageLog(PageLog pageLog) throws DbException;
+
+    ChangeFeed<PageLog> listPageLogs(PageLogListRequest request) throws DbException;
+
+    ListCountResponse countPageLogs(PageLogListRequest request) throws DbException;
+
+    ExtractedText addExtractedText(ExtractedText et) throws DbException;
+
+    /**
+     * Set the desired pause state for Veidemann
+     *
+     * @param value true if Veidemann should pause
+     * @return the old state
+     * @throws DbException
+     */
+    boolean setDesiredPausedState(boolean value) throws DbException;
+
+    /**
+     * Get the desired pause state for Veidemann
+     *
+     * @return true if Veidemann should pause
+     * @throws DbException
+     */
+    boolean getDesiredPausedState() throws DbException;
+
+    /**
+     * Get the actual pause state for Veidemann
+     *
+     * @return true if Veidemann is paused
+     * @throws DbException
+     */
+    boolean isPaused() throws DbException;
 }
