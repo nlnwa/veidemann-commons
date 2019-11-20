@@ -61,8 +61,10 @@ public class ApiKeyAuAuServerInterceptorTest {
         service = new TestService();
         ApiKeyRoleMapper apiKeyRoleMapper = new ApiKeyRoleMapperFromFile("src/test/resources/apikey_rolemapping");
         ApiKeyAuAuServerInterceptor apiKeyAuAuServerInterceptor = new ApiKeyAuAuServerInterceptor(apiKeyRoleMapper);
+        ApiKeyRoleMapper apiKeyRoleMapper2 = new ApiKeyRoleMapperFromFile("src/test/resources/apikey_rolemapping2");
+        ApiKeyAuAuServerInterceptor apiKeyAuAuServerInterceptor2 = new ApiKeyAuAuServerInterceptor(apiKeyRoleMapper2);
         inProcessServer = inProcessServerBuilder
-                .addService(apiKeyAuAuServerInterceptor.intercept(service))
+                .addService(apiKeyAuAuServerInterceptor.intercept(apiKeyAuAuServerInterceptor2.intercept(service)))
                 .build().start();
     }
 
@@ -75,7 +77,7 @@ public class ApiKeyAuAuServerInterceptorTest {
     @Test
     public void interceptCall() {
         blockingStub.withCallCredentials(createCredentials("myApiKey")).submitUri(SubmitUriRequest.getDefaultInstance());
-        Assertions.assertThat(service.lastRoles).containsExactlyInAnyOrder(Role.ANY_USER, Role.SYSTEM);
+        Assertions.assertThat(service.lastRoles).containsExactlyInAnyOrder(Role.ANY_USER, Role.SYSTEM, Role.OPERATOR);
     }
 
     public static class TestService extends OosHandlerGrpc.OosHandlerImplBase {

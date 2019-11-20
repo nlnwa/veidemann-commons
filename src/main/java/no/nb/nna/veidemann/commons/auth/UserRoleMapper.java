@@ -15,6 +15,7 @@
  */
 package no.nb.nna.veidemann.commons.auth;
 
+import no.nb.nna.veidemann.api.config.v1.ConfigObject;
 import no.nb.nna.veidemann.api.config.v1.Kind;
 import no.nb.nna.veidemann.api.config.v1.ListRequest;
 import no.nb.nna.veidemann.api.config.v1.Role;
@@ -42,6 +43,7 @@ public class UserRoleMapper {
 
     Map<String, Set<Role>> rolesByEmail = new HashMap<>();
     Map<String, Set<Role>> rolesByGroup = new HashMap<>();
+    Map<String, Set<Role>> rolesByApiKey = new HashMap<>();
 
     Lock roleUpdateLock = new ReentrantLock();
 
@@ -71,15 +73,30 @@ public class UserRoleMapper {
         }
     }
 
+    public Collection<Role> getRolesForApiKey(String apiKey, Collection<Role> roles) {
+        roleUpdateLock.lock();
+        try {
+            if (apiKey != null && rolesByApiKey.containsKey(apiKey)) {
+                roles.addAll(rolesByApiKey.get(apiKey));
+                roles.add(Role.ANY_USER);
+            }
+            LOG.debug("Get roles for apiKey: {}, resolved to roles: {}", apiKey, roles);
+            return roles;
+        } finally {
+            roleUpdateLock.unlock();
+        }
+    }
+
     private void updateRoleMappings() {
         LOG.trace("Update role mappings");
         Map<String, Set<Role>> rolesByEmailTmp = new HashMap<>();
         Map<String, Set<Role>> rolesByGroupTmp = new HashMap<>();
+        Map<String, Set<Role>> rolesByApiKeyTmp = new HashMap<>();
 
         try {
             DbService.getInstance().getConfigAdapter()
                     .listConfigObjects(ListRequest.newBuilder().setKind(Kind.roleMapping).build())
-                    .stream().forEach(rm -> addRoleMapping(rm.getRoleMapping(), rolesByEmailTmp, rolesByGroupTmp));
+                    .stream().forEach(rm -> addRoleMapping(rm, rolesByEmailTmp, rolesByGroupTmp, rolesByApiKeyTmp));
         } catch (DbException e) {
             LOG.warn("Could not get role mappings from DB", e);
         }
@@ -88,13 +105,15 @@ public class UserRoleMapper {
         try {
             rolesByEmail = rolesByEmailTmp;
             rolesByGroup = rolesByGroupTmp;
+            rolesByApiKey = rolesByApiKeyTmp;
         } finally {
             roleUpdateLock.unlock();
         }
     }
 
-    private void addRoleMapping(RoleMapping rm, Map<String, Set<Role>> emailRoles, Map<String, Set<Role>> groupRoles) {
-        switch (rm.getEmailOrGroupCase()) {
+    private void addRoleMapping(ConfigObject rmConfig, Map<String, Set<Role>> emailRoles, Map<String, Set<Role>> groupRoles, Map<String, Set<Role>> apiKeyRoles) {
+        RoleMapping rm = rmConfig.getRoleMapping();
+        switch (rmConfig.getRoleMapping().getEmailOrGroupCase()) {
             case EMAIL:
                 LOG.trace("Adding role for email: {}, roles: {}", rm.getEmail(), rm.getRoleList());
                 rm.getRoleList().forEach(role -> addRoleToList(emailRoles, rm.getEmail(), role));
@@ -102,6 +121,15 @@ public class UserRoleMapper {
             case GROUP:
                 LOG.trace("Adding role for group: {}, roles: {}", rm.getGroup(), rm.getRoleList());
                 rm.getRoleList().forEach(role -> addRoleToList(groupRoles, rm.getGroup(), role));
+                break;
+            case API_KEY:
+                long validUntil = com.google.protobuf.util.Timestamps.toMillis(rm.getApiKey().getValidUntil());
+                if (validUntil <= 0 || validUntil > System.currentTimeMillis()) {
+                    LOG.trace("Adding role for apiKey: {}, roles: {}", rm.getApiKey().getToken(), rm.getRoleList());
+                    rm.getRoleList().forEach(role -> addRoleToList(apiKeyRoles, rm.getApiKey().getToken(), role));
+                } else {
+                    LOG.debug("ApiKey {} with roles: {} is expired", rm.getApiKey().getToken(), rm.getRoleList());
+                }
                 break;
         }
     }

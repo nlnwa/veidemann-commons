@@ -18,14 +18,19 @@ package no.nb.nna.veidemann.commons.auth;
 import io.grpc.BindableService;
 import io.grpc.Context;
 import io.grpc.Contexts;
+import io.grpc.ForwardingServerCallListener.SimpleForwardingServerCallListener;
 import io.grpc.Metadata;
 import io.grpc.ServerCall;
 import io.grpc.ServerCall.Listener;
 import io.grpc.ServerCallHandler;
-import io.grpc.ServerInterceptors;
-import io.grpc.ServerServiceDefinition;
 import io.grpc.Status;
+import no.nb.nna.veidemann.api.config.v1.ConfigObject;
+import no.nb.nna.veidemann.api.config.v1.ConfigRef;
+import no.nb.nna.veidemann.api.config.v1.GetLabelKeysRequest;
+import no.nb.nna.veidemann.api.config.v1.Kind;
+import no.nb.nna.veidemann.api.config.v1.ListRequest;
 import no.nb.nna.veidemann.api.config.v1.Role;
+import no.nb.nna.veidemann.api.config.v1.UpdateRequest;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -46,37 +51,14 @@ public class AuthorisationAuAuServerInterceptor extends AuAuServerInterceptor {
 
     private Grants grants = new Grants();
 
-    public AuthorisationAuAuServerInterceptor() {
-    }
+    public AuthorisationAuAuServerInterceptor(BindableService service) {
+        Class serviceClass = service.getClass();
 
-    /**
-     * Add authorization to all requests made to this service.
-     *
-     * @param bindableService to intercept
-     * @return the serviceDef with an authorization interceptor
-     */
-    @Override
-    public ServerServiceDefinition intercept(BindableService bindableService) {
-        return intercept(bindableService.bindService(), bindableService.getClass());
-    }
-
-    /**
-     * Add authorization to all requests made to this service.
-     *
-     * @param serviceDef to intercept
-     * @return the serviceDef with an authorization interceptor
-     */
-    public ServerServiceDefinition intercept(ServerServiceDefinition serviceDef) {
-        return intercept(serviceDef, serviceDef.getClass());
-    }
-
-    private ServerServiceDefinition intercept(ServerServiceDefinition serviceDef, Class serviceClass) {
-        String serviceName = serviceDef.getServiceDescriptor().getName();
+        String serviceName = service.bindService().getServiceDescriptor().getName();
         Arrays.stream(serviceClass.getDeclaredMethods())
-                .forEach(m -> grants.addGrants(
-                        serviceName + "/" + m.getName().substring(0, 1).toUpperCase() + m.getName().substring(1),
-                        m.getDeclaredAnnotation(AllowedRoles.class)));
-        return ServerInterceptors.intercept(serviceDef, this);
+                .forEach(m -> {
+                    grants.addGrants(serviceName + "/" + m.getName().substring(0, 1).toUpperCase() + m.getName().substring(1), m);
+                });
     }
 
     @Override
@@ -103,6 +85,42 @@ public class AuthorisationAuAuServerInterceptor extends AuAuServerInterceptor {
                         .withValue(RolesContextKey.getKey(), roles);
                 return Contexts.interceptCall(contextWithEmailAndRoles, call, requestHeaders, next);
             }
+        }
+
+        // If the call is for the config service, then we also need to take the Kind from the request into account
+        if ("veidemann.api.config.v1.Config".equals(call.getMethodDescriptor().getServiceName())) {
+            ServerCall.Listener<ReqT> nextListener = next.startCall(call, requestHeaders);
+
+            nextListener = new SimpleForwardingServerCallListener<ReqT>(nextListener) {
+                @Override
+                public void onMessage(ReqT message) {
+                    Kind kind;
+                    if (message instanceof ConfigRef) {
+                        kind = ((ConfigRef) message).getKind();
+                    } else if (message instanceof ConfigObject) {
+                        kind = ((ConfigObject) message).getKind();
+                    } else if (message instanceof ListRequest) {
+                        kind = ((ListRequest) message).getKind();
+                    } else if (message instanceof UpdateRequest) {
+                        kind = ((UpdateRequest) message).getListRequest().getKind();
+                    } else if (message instanceof GetLabelKeysRequest) {
+                        kind = ((GetLabelKeysRequest) message).getKind();
+                    } else {
+                        kind = Kind.undefined;
+                    }
+
+                    LOG.debug("Kind: {}", kind);
+
+                    // Check if user has required role
+                    if (!grants.isAllowed(method, kind, roles)) {
+                        call.close(Status.PERMISSION_DENIED, new Metadata());
+                    } else {
+                        super.onMessage(message);
+                    }
+                }
+            };
+
+            return nextListener;
         }
 
         // Check if user has required role

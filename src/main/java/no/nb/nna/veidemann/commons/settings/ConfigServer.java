@@ -16,7 +16,7 @@
 package no.nb.nna.veidemann.commons.settings;
 
 import com.typesafe.config.Config;
-import no.nb.nna.veidemann.api.ConfigProto.LogLevels;
+import no.nb.nna.veidemann.api.config.v1.LogLevels;
 
 /**
  *

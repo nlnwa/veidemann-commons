@@ -15,15 +15,11 @@
  */
 package no.nb.nna.veidemann.commons.db;
 
-import com.google.protobuf.Empty;
 import no.nb.nna.veidemann.api.MessagesProto.ExtractedText;
-import no.nb.nna.veidemann.api.MessagesProto.Screenshot;
 import no.nb.nna.veidemann.api.ReportProto.CrawlLogListReply;
 import no.nb.nna.veidemann.api.ReportProto.CrawlLogListRequest;
 import no.nb.nna.veidemann.api.ReportProto.PageLogListReply;
 import no.nb.nna.veidemann.api.ReportProto.PageLogListRequest;
-import no.nb.nna.veidemann.api.ReportProto.ScreenshotListReply;
-import no.nb.nna.veidemann.api.ReportProto.ScreenshotListRequest;
 import no.nb.nna.veidemann.api.contentwriter.v1.CrawledContent;
 import no.nb.nna.veidemann.api.contentwriter.v1.StorageRef;
 import no.nb.nna.veidemann.api.frontier.v1.CrawlLog;
@@ -51,12 +47,6 @@ public interface DbAdapter {
     PageLogListReply listPageLogs(PageLogListRequest request) throws DbException;
 
     ExtractedText addExtractedText(ExtractedText et) throws DbException;
-
-    ScreenshotListReply listScreenshots(ScreenshotListRequest request) throws DbException;
-
-    Screenshot saveScreenshot(Screenshot screenshot) throws DbException;
-
-    Empty deleteScreenshot(Screenshot screenshot) throws DbException;
 
     /**
      * Set the desired pause state for Veidemann
