@@ -28,7 +28,7 @@ import org.slf4j.LoggerFactory;
 import java.util.Collection;
 
 /**
- * Authenticate a client by mapping an api key to a set of roles defined in ba an {@link ApiKeyRoleMapper}.
+ * Authenticate a client by mapping an api key to a set of roles defined in an {@link ApiKeyRoleMapper}.
  * <p>
  * This interceptor must be followed by {@link AuthorisationAuAuServerInterceptor}.
  */
