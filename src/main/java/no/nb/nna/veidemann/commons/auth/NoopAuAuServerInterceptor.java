@@ -51,7 +51,9 @@ public class NoopAuAuServerInterceptor extends AuAuServerInterceptor {
         Collection<Role> roles = getRoleList();
 
         for (Role r : Role.values()) {
-            roles.add(r);
+            if (r != Role.UNRECOGNIZED) {
+                roles.add(r);
+            }
         }
 
         Context contextWithAllRoles = Context.current()
