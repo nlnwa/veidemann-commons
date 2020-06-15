@@ -81,10 +81,6 @@ public class DbService implements AutoCloseable {
         return service.getConfigAdapter();
     }
 
-    public CrawlQueueAdapter getCrawlQueueAdapter() {
-        return service.getCrawlQueueAdapter();
-    }
-
     public ExecutionsAdapter getExecutionsAdapter() {
         return service.getExecutionsAdapter();
     }

@@ -13,8 +13,6 @@ public interface DbServiceSPI extends AutoCloseable {
 
     ConfigAdapter getConfigAdapter();
 
-    CrawlQueueAdapter getCrawlQueueAdapter();
-
     ExecutionsAdapter getExecutionsAdapter();
 
     EventAdapter getEventAdapter();

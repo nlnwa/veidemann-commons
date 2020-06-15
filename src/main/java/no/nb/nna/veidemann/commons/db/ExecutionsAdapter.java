@@ -46,10 +46,6 @@ public interface ExecutionsAdapter {
      */
     JobExecutionStatus setJobExecutionStateAborted(String jobExecutionId) throws DbException;
 
-    CrawlExecutionStatus createCrawlExecutionStatus(String jobId, String jobExecutionId, String seedId, CrawlScope scope) throws DbException;
-
-    CrawlExecutionStatus updateCrawlExecutionStatus(CrawlExecutionStatusChange status) throws DbException;
-
     CrawlExecutionStatus getCrawlExecutionStatus(String crawlExecutionId) throws DbException;
 
     ChangeFeed<CrawlExecutionStatus> listCrawlExecutionStatus(CrawlExecutionsListRequest request) throws DbException;
