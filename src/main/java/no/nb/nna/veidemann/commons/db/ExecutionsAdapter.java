@@ -16,11 +16,9 @@
 package no.nb.nna.veidemann.commons.db;
 
 import no.nb.nna.veidemann.api.commons.v1.ExtractedText;
-import no.nb.nna.veidemann.api.config.v1.CrawlScope;
 import no.nb.nna.veidemann.api.contentwriter.v1.CrawledContent;
 import no.nb.nna.veidemann.api.contentwriter.v1.StorageRef;
 import no.nb.nna.veidemann.api.frontier.v1.CrawlExecutionStatus;
-import no.nb.nna.veidemann.api.frontier.v1.CrawlExecutionStatusChange;
 import no.nb.nna.veidemann.api.frontier.v1.CrawlLog;
 import no.nb.nna.veidemann.api.frontier.v1.JobExecutionStatus;
 import no.nb.nna.veidemann.api.frontier.v1.PageLog;
@@ -95,12 +93,4 @@ public interface ExecutionsAdapter {
      * @throws DbException
      */
     boolean getDesiredPausedState() throws DbException;
-
-    /**
-     * Get the actual pause state for Veidemann
-     *
-     * @return true if Veidemann is paused
-     * @throws DbException
-     */
-    boolean isPaused() throws DbException;
 }
