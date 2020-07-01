@@ -13,7 +13,7 @@
 
         <veidemann.api.version>1.0.0-beta17</veidemann.api.version>
 
-        <log4j.version>2.7</log4j.version>
+        <log4j.version>2.13.3</log4j.version>
         <io.opentracing.version>0.30.0</io.opentracing.version>
         <com.uber.jaeger.version>0.21.0</com.uber.jaeger.version>
         <com.typesafe.version>1.4.0</com.typesafe.version>
