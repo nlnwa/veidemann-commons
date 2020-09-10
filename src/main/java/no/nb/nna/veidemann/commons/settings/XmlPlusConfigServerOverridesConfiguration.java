@@ -145,9 +145,8 @@ public class XmlPlusConfigServerOverridesConfiguration extends XmlConfiguration 
         @Override
         public void run() {
             for (final ConfigurationListener configurationListener : listeners) {
-                LoggerContext.getContext(false)
-                        .submitDaemon(new ReconfigurationRunnable(configurationListener,
-                                XmlPlusConfigServerOverridesConfiguration.this));
+                getScheduler().schedule(new ReconfigurationRunnable(configurationListener,
+                        XmlPlusConfigServerOverridesConfiguration.this), 0, TimeUnit.MILLISECONDS);
             }
         }
 
