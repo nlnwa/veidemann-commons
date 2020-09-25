@@ -18,19 +18,21 @@ package no.nb.nna.veidemann.commons.settings;
 import com.typesafe.config.Config;
 import com.typesafe.config.ConfigFactory;
 
+import java.lang.reflect.InvocationTargetException;
+
 /**
  *
  */
 public class ConfigServerFactory {
 
     public static ConfigServer getConfigServer()
-            throws ClassNotFoundException, InstantiationException, IllegalAccessException {
+            throws ClassNotFoundException, InstantiationException, IllegalAccessException, NoSuchMethodException, InvocationTargetException {
 
         Config config = ConfigFactory.load();
         config.checkValid(ConfigFactory.defaultReference());
 
         String className = config.getString("configServer");
-        ConfigServer configServer = (ConfigServer) Class.forName(className).newInstance();
+        ConfigServer configServer = (ConfigServer) Class.forName(className).getDeclaredConstructor().newInstance();
         configServer.init(config);
         
         return configServer;
