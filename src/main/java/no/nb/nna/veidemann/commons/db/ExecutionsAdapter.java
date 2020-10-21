@@ -44,18 +44,28 @@ public interface ExecutionsAdapter {
      */
     JobExecutionStatus setJobExecutionStateAborted(String jobExecutionId) throws DbException;
 
+    /**
+     * Update the state for all CrawlExecutions of a Job Execution to ABORTED_TIMEOUT.
+     *
+     * @param jobExecutionId id of the job execution to update
+     */
+    void setJobExecutionStateAbortedTimeout(String jobExecutionId) throws DbException;
+
     CrawlExecutionStatus getCrawlExecutionStatus(String crawlExecutionId) throws DbException;
 
     ChangeFeed<CrawlExecutionStatus> listCrawlExecutionStatus(CrawlExecutionsListRequest request) throws DbException;
 
     /**
-     * Update the state for a Crawl Execution to ABORTED_MANUAL.
+     * Update the state for a Crawl Execution to the submitted abortion state.
      * <p>
+     * Only ABORTED_MANUAL, ABORTED_SIZE or ABORTED_TIMEOUT are allowed.
      * The frontier should detect this and abort the crawl.
      *
      * @param crawlExecutionId id of the execution to update
+     * @param state            the state to set. Must be one of ABORTED_MANUAL, ABORTED_SIZE, ABORTED_TIMEOUT
+     * @throws IllegalArgumentException if an illegal state is submitted
      */
-    CrawlExecutionStatus setCrawlExecutionStateAborted(String crawlExecutionId) throws DbException;
+    CrawlExecutionStatus setCrawlExecutionStateAborted(String crawlExecutionId, CrawlExecutionStatus.State state) throws DbException;
 
     Optional<CrawledContent> hasCrawledContent(CrawledContent cc) throws DbException;
 
