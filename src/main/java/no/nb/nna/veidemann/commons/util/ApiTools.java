@@ -18,6 +18,7 @@ package no.nb.nna.veidemann.commons.util;
 import com.google.protobuf.Descriptors.FieldDescriptor;
 import com.google.protobuf.GeneratedMessageV3.Builder;
 import com.google.protobuf.Message;
+import no.nb.nna.veidemann.api.config.v1.Annotation;
 import no.nb.nna.veidemann.api.config.v1.ConfigObject;
 import no.nb.nna.veidemann.api.config.v1.ConfigRef;
 import no.nb.nna.veidemann.api.config.v1.Label;
@@ -81,13 +82,20 @@ public class ApiTools {
     public static Meta buildMeta(String name, String description, Label... label) {
         return Meta.newBuilder()
                 .setName(name)
-                .setDescription(name)
+                .setDescription(description)
                 .addAllLabel(Arrays.asList(label))
                 .build();
     }
 
     public static Label buildLabel(String key, String value) {
         return Label.newBuilder()
+                .setKey(key)
+                .setValue(value)
+                .build();
+    }
+
+    public static Annotation buildAnnotation(String key, String value) {
+        return Annotation.newBuilder()
                 .setKey(key)
                 .setValue(value)
                 .build();
