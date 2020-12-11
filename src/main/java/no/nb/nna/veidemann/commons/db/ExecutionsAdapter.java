@@ -85,8 +85,6 @@ public interface ExecutionsAdapter {
 
     ListCountResponse countPageLogs(PageLogListRequest request) throws DbException;
 
-    ExtractedText addExtractedText(ExtractedText et) throws DbException;
-
     /**
      * Set the desired pause state for Veidemann
      *

@@ -56,7 +56,8 @@ public class UserRoleMapper {
     public Collection<Role> getRolesForUser(String email, Collection<String> groups, Collection<Role> roles) {
         roleUpdateLock.lock();
         try {
-            if (email != null && rolesByEmail.containsKey(email)) {
+            if (email != null && rolesByEmail.containsKey(email.toLowerCase())) {
+                email = email.toLowerCase();
                 roles.addAll(rolesByEmail.get(email));
             }
             if (groups != null) {
@@ -115,8 +116,8 @@ public class UserRoleMapper {
         RoleMapping rm = rmConfig.getRoleMapping();
         switch (rmConfig.getRoleMapping().getEmailOrGroupCase()) {
             case EMAIL:
-                LOG.trace("Adding role for email: {}, roles: {}", rm.getEmail(), rm.getRoleList());
-                rm.getRoleList().forEach(role -> addRoleToList(emailRoles, rm.getEmail(), role));
+                LOG.trace("Adding role for email: {}, roles: {}", rm.getEmail().toLowerCase(), rm.getRoleList());
+                rm.getRoleList().forEach(role -> addRoleToList(emailRoles, rm.getEmail().toLowerCase(), role));
                 break;
             case GROUP:
                 LOG.trace("Adding role for group: {}, roles: {}", rm.getGroup(), rm.getRoleList());

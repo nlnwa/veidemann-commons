@@ -12,7 +12,7 @@
         <maven.compiler.source>11</maven.compiler.source>
         <maven.compiler.target>11</maven.compiler.target>
 
-        <veidemann.api.version>1.0.0-beta19</veidemann.api.version>
+        <veidemann.api.version>1.0.0-beta20</veidemann.api.version>
 
         <log4j.version>2.13.3</log4j.version>
         <io.opentracing.version>0.30.0</io.opentracing.version>
@@ -43,11 +43,6 @@
             <groupId>com.github.nlnwa</groupId>
             <artifactId>veidemann-api</artifactId>
             <version>${veidemann.api.version}</version>
-        </dependency>
-        <dependency>
-            <groupId>com.github.nlnwa</groupId>
-            <artifactId>webarchive-commons</artifactId>
-            <version>fixIpv4Parser-SNAPSHOT</version>
         </dependency>
         <dependency>
             <groupId>io.opentracing</groupId>
