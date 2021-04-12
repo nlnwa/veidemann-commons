@@ -15,18 +15,12 @@
  */
 package no.nb.nna.veidemann.commons.db;
 
-import no.nb.nna.veidemann.api.commons.v1.ExtractedText;
 import no.nb.nna.veidemann.api.contentwriter.v1.CrawledContent;
 import no.nb.nna.veidemann.api.contentwriter.v1.StorageRef;
 import no.nb.nna.veidemann.api.frontier.v1.CrawlExecutionStatus;
-import no.nb.nna.veidemann.api.frontier.v1.CrawlLog;
 import no.nb.nna.veidemann.api.frontier.v1.JobExecutionStatus;
-import no.nb.nna.veidemann.api.frontier.v1.PageLog;
 import no.nb.nna.veidemann.api.report.v1.CrawlExecutionsListRequest;
-import no.nb.nna.veidemann.api.report.v1.CrawlLogListRequest;
 import no.nb.nna.veidemann.api.report.v1.JobExecutionsListRequest;
-import no.nb.nna.veidemann.api.report.v1.ListCountResponse;
-import no.nb.nna.veidemann.api.report.v1.PageLogListRequest;
 
 import java.util.Optional;
 
@@ -72,18 +66,6 @@ public interface ExecutionsAdapter {
     StorageRef saveStorageRef(StorageRef storageRef) throws DbException;
 
     StorageRef getStorageRef(String warcId) throws DbException;
-
-    CrawlLog saveCrawlLog(CrawlLog cl) throws DbException;
-
-    ChangeFeed<CrawlLog> listCrawlLogs(CrawlLogListRequest request) throws DbException;
-
-    ListCountResponse countCrawlLogs(CrawlLogListRequest request) throws DbException;
-
-    PageLog savePageLog(PageLog pageLog) throws DbException;
-
-    ChangeFeed<PageLog> listPageLogs(PageLogListRequest request) throws DbException;
-
-    ListCountResponse countPageLogs(PageLogListRequest request) throws DbException;
 
     /**
      * Set the desired pause state for Veidemann
