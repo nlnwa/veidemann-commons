@@ -16,16 +16,14 @@
 
 package no.nb.nna.veidemann.commons.client;
 
-import io.grpc.Attributes;
 import io.grpc.CallCredentials;
 import io.grpc.ManagedChannel;
 import io.grpc.ManagedChannelBuilder;
 import io.grpc.Metadata;
-import io.grpc.MethodDescriptor;
 import io.grpc.Status;
 import io.grpc.Status.Code;
 import io.grpc.StatusRuntimeException;
-import io.opentracing.contrib.ClientTracingInterceptor;
+import io.opentracing.contrib.grpc.TracingClientInterceptor;
 import io.opentracing.util.GlobalTracer;
 import no.nb.nna.veidemann.api.eventhandler.v1.Data;
 import no.nb.nna.veidemann.api.eventhandler.v1.EventHandlerGrpc;
@@ -68,7 +66,7 @@ public class EventHandlerClient implements AutoCloseable {
 
     public EventHandlerClient(final ManagedChannelBuilder<?> channelBuilder, final String apiKey) {
         LOG.info("Setting up Event handler client");
-        ClientTracingInterceptor tracingInterceptor = new ClientTracingInterceptor.Builder(GlobalTracer.get()).build();
+        TracingClientInterceptor tracingInterceptor = TracingClientInterceptor.newBuilder().withTracer(GlobalTracer.get()).build();
         channel = channelBuilder.intercept(tracingInterceptor).build();
         blockingStub = EventHandlerGrpc.newBlockingStub(channel).withCallCredentials(createCredentials(apiKey));
     }

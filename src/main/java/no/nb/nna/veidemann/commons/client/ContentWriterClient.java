@@ -15,13 +15,12 @@
  */
 package no.nb.nna.veidemann.commons.client;
 
-import com.google.protobuf.Empty;
 import io.grpc.ManagedChannel;
 import io.grpc.ManagedChannelBuilder;
 import io.grpc.Status;
 import io.grpc.StatusException;
 import io.grpc.stub.StreamObserver;
-import io.opentracing.contrib.ClientTracingInterceptor;
+import io.opentracing.contrib.grpc.TracingClientInterceptor;
 import io.opentracing.util.GlobalTracer;
 import no.nb.nna.veidemann.api.contentwriter.v1.ContentWriterGrpc;
 import no.nb.nna.veidemann.api.contentwriter.v1.Data;
@@ -61,7 +60,7 @@ public class ContentWriterClient implements AutoCloseable {
 
     public ContentWriterClient(ManagedChannelBuilder<?> channelBuilder) {
         LOG.info("Setting up ContentWriter client");
-        ClientTracingInterceptor tracingInterceptor = new ClientTracingInterceptor.Builder(GlobalTracer.get()).build();
+        TracingClientInterceptor tracingInterceptor = TracingClientInterceptor.newBuilder().withTracer(GlobalTracer.get()).build();
         channel = channelBuilder.intercept(tracingInterceptor).build();
         blockingStub = ContentWriterGrpc.newBlockingStub(channel);
         asyncStub = ContentWriterGrpc.newStub(channel);
