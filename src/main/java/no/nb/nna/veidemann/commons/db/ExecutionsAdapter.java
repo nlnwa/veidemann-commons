@@ -15,14 +15,10 @@
  */
 package no.nb.nna.veidemann.commons.db;
 
-import no.nb.nna.veidemann.api.contentwriter.v1.CrawledContent;
-import no.nb.nna.veidemann.api.contentwriter.v1.StorageRef;
 import no.nb.nna.veidemann.api.frontier.v1.CrawlExecutionStatus;
 import no.nb.nna.veidemann.api.frontier.v1.JobExecutionStatus;
 import no.nb.nna.veidemann.api.report.v1.CrawlExecutionsListRequest;
 import no.nb.nna.veidemann.api.report.v1.JobExecutionsListRequest;
-
-import java.util.Optional;
 
 public interface ExecutionsAdapter {
     JobExecutionStatus createJobExecutionStatus(String jobId) throws DbException;
@@ -60,8 +56,6 @@ public interface ExecutionsAdapter {
      * @throws IllegalArgumentException if an illegal state is submitted
      */
     CrawlExecutionStatus setCrawlExecutionStateAborted(String crawlExecutionId, CrawlExecutionStatus.State state) throws DbException;
-
-    Optional<CrawledContent> hasCrawledContent(CrawledContent cc) throws DbException;
 
     /**
      * Set the desired pause state for Veidemann
