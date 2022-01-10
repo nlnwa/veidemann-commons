@@ -63,10 +63,6 @@ public interface ExecutionsAdapter {
 
     Optional<CrawledContent> hasCrawledContent(CrawledContent cc) throws DbException;
 
-    StorageRef saveStorageRef(StorageRef storageRef) throws DbException;
-
-    StorageRef getStorageRef(String warcId) throws DbException;
-
     /**
      * Set the desired pause state for Veidemann
      *
